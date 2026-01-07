@@ -1,0 +1,16 @@
+{
+    "name": "Cozy Pomodoro",
+    "short_name": "CozyTimer",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#FFF9E6",
+    "theme_color": "#FFF9E6",
+    "description": "一個溫馨可愛的番茄鐘計時器",
+    "icons": [
+        {
+            "src": "icon.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

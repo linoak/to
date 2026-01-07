@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#FFF9E6">
+    <link rel="apple-touch-icon" href="icon.png">
+
+    <title>Cozy Pomodoro | 溫馨番茄鐘</title>
+    <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #FFF9E6;
+            --card-bg: #FFFFFF;
+            --primary: #FFB7B2;
+            --secondary: #B5EAD7;
+            --text-color: #6D6060;
+            --shadow: 0 8px 24px rgba(149, 157, 165, 0.2);
+            --overlay-bg: rgba(109, 96, 96, 0.5);
+            /* 彈窗背景遮罩 */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Varela Round', sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 30px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+            position: relative;
+            border: 4px solid #FFF0F0;
+        }
+
+        /* --- 頂部控制按鈕 (左邊說明，右邊音樂) --- */
+        .top-left-controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+        }
+
+        .top-right-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        .control-btn {
+            background: rgba(255, 240, 240, 0.5);
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 8px;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #ccc;
+            transition: all 0.3s ease;
+        }
+
+        .control-btn:hover {
+            background: #fff;
+            color: var(--primary);
+        }
+
+        .control-btn.active {
+            background: #fff;
+            color: var(--primary);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-color);
+            margin-top: 1rem;
+        }
+
+        .icon-placeholder {
+            width: 120px;
+            height: 120px;
+            background-color: #FFF0F0;
+            border-radius: 50%;
+            margin: 0 auto 1.5rem auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3rem;
+            border: 3px dashed var(--primary);
+            transition: transform 0.3s ease;
+        }
+
+        .timer-display {
+            font-size: 4rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            text-shadow: 2px 2px 0px #ffeebb;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 2rem;
+        }
+
+        button.btn {
+            border: none;
+            padding: 12px 24px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        button.btn:active {
+            transform: scale(0.9);
+            box-shadow: 0 2px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-start {
+            background-color: var(--secondary);
+            color: #4b7a6a;
+        }
+
+        .btn-pause {
+            background-color: #FFDAC1;
+            color: #8a5a44;
+        }
+
+        .btn-reset {
+            background-color: #E2F0CB;
+            color: #5c7046;
+        }
+
+        #install-btn {
+            display: none;
+            background-color: #C7CEEA;
+            color: #586084;
+            margin-top: 15px;
+            width: 100%;
+            border-radius: 15px;
+            padding: 10px;
+        }
+
+        .settings {
+            border-top: 2px dashed #eee;
+            padding-top: 1.5rem;
+        }
+
+        .input-group {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="number"] {
+            width: 60px;
+            padding: 8px;
+            border: 2px solid #E2F0CB;
+            border-radius: 15px;
+            text-align: center;
+            font-size: 1rem;
+            color: var(--text-color);
+            outline: none;
+        }
+
+        /* --- 彈跳視窗 (Modal) 樣式 --- */
+        .modal-overlay {
+            display: none;
+            /* 預設隱藏 */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--overlay-bg);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(3px);
+            /* 背景模糊效果 */
+        }
+
+        .modal-content {
+            background: #fff;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            /* 限制高度，太長會出捲軸 */
+            overflow-y: auto;
+            /* 內容太長可捲動 */
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            text-align: left;
+            position: relative;
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .modal-content h2 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .modal-content h3 {
+            color: #586084;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .modal-content p {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #666;
+            margin-bottom: 1rem;
+        }
+
+        .modal-content ul {
+            padding-left: 1.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .modal-content li {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #666;
+            margin-bottom: 0.3rem;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #999;
+            cursor: pointer;
+        }
+
+        .close-btn:hover {
+            color: var(--primary);
+        }
+
+        /* 美化捲軸 */
+        .modal-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .modal-content::-webkit-scrollbar-thumb {
+            background-color: #eee;
+            border-radius: 4px;
+        }
+
+        .modal-content::-webkit-scrollbar-thumb:hover {
+            background-color: var(--primary);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="top-left-controls">
+            <button class="control-btn active" onclick="openModal()" title="說明">
+                ❓
+            </button>
+        </div>
+
+        <div class="top-right-controls">
+            <button class="control-btn" id="music-btn" onclick="toggleMusic()" title="背景音樂">🎵</button>
+            <button class="control-btn active" id="sound-btn" onclick="toggleSound()" title="提示音效">🔊</button>
+        </div>
+
+        <h1>🍅 番茄鐘工作法</h1>
+        <div class="icon-placeholder" id="icon-area"><span>🍅</span></div>
+        <div class="timer-display" id="timer">25:00</div>
+
+        <div class="controls">
+            <button class="btn btn-start" onclick="startTimer()">開始</button>
+            <button class="btn btn-pause" onclick="pauseTimer()">暫停</button>
+            <button class="btn btn-reset" onclick="resetTimer()">重置</button>
+        </div>
+
+        <div class="settings">
+            <div class="input-group">
+                <label for="custom-time">時間 (分):</label>
+                <input type="number" id="custom-time" value="25" min="1" max="90" onchange="updateCustomTime()">
+            </div>
+            <button id="install-btn" class="btn">⬇️ 安裝到桌面</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="info-modal" onclick="closeModal(event)">
+        <div class="modal-content">
+            <button class="close-btn" onclick="forceCloseModal()">×</button>
+            <h2>什麼是番茄工作法？</h2>
+            <p>番茄工作法是一種時間管理方法，其核心在於短暫專注的工作時段（通常為 25 分鐘）後接短暫的休息時間。每個 25 分鐘的時間段被稱為一個番茄鐘。</p>
+            <p>但經典的 25/5 模式並非硬性規定，而是一種框架。短時間專注的工作時段對於啟動複雜任務、克服拖延症以及透過緊迫感提升專注力非常有效。</p>
+
+            <h3>🕰️ 常用計時區間參考</h3>
+            <ul>
+                <li><strong>25 分鐘任務</strong> + 5 分鐘休息 (經典)</li>
+                <li><strong>30 分鐘任務</strong> + 6 分鐘休息</li>
+                <li><strong>50 分鐘任務</strong> + 10 分鐘休息</li>
+                <li><strong>1.5 小時任務</strong> + 15 分鐘休息</li>
+                <li><strong>2 小時任務</strong> + 20 分鐘休息</li>
+            </ul>
+
+            <h3>✨ 番茄工作法的好處</h3>
+            <p>番茄工作法將一天的時間分成若干個易於管理的專注和休息時段，幫助你在工作中保持專注和高效。</p>
+            <ul>
+                <li><strong>提升專注力：</strong>在緊急、限時的集中註意力方面有所提升。</li>
+                <li><strong>提升動力：</strong>小小的成功能夠累積動能和進步。</li>
+                <li><strong>減少拖延：</strong>更容易開始任務並克服決策癱瘓。</li>
+                <li><strong>防止倦怠：</strong>定期休息可以保持精力充沛和思維清晰。</li>
+                <li><strong>建立節奏：</strong>創造可持續的專注與休息循環。</li>
+                <li><strong>減少干擾：</strong>幫助你集中註意力，抵禦幹擾。</li>
+                <li><strong>支援深度工作：</strong>增強專注力，延長心流狀態。</li>
+            </ul>
+        </div>
+    </div>
+
+    <audio id="bgm-player" loop>
+        <source src="breakfast2.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        // --- 彈跳視窗邏輯 ---
+        const modal = document.getElementById('info-modal');
+
+        function openModal() {
+            modal.style.display = 'flex';
+        }
+
+        // 點擊背景關閉
+        function closeModal(e) {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // 點擊 X 按鈕關閉
+        function forceCloseModal() {
+            modal.style.display = 'none';
+        }
+
+        // --- PWA 邏輯 ---
+        let deferredPrompt;
+        const installBtn = document.getElementById('install-btn');
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault(); deferredPrompt = e; installBtn.style.display = 'block';
+            installBtn.addEventListener('click', () => {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then(() => { deferredPrompt = null; installBtn.style.display = 'none'; });
+            });
+        });
+
+        // --- 番茄鐘與音樂邏輯 ---
+        let timeLeft = 25 * 60;
+        let timerId = null;
+        let isRunning = false;
+        let isSoundOn = true;
+        let isMusicPlaying = false;
+
+        const timerDisplay = document.getElementById('timer');
+        const customTimeInput = document.getElementById('custom-time');
+        const iconArea = document.getElementById('icon-area');
+        const soundBtn = document.getElementById('sound-btn');
+        const musicBtn = document.getElementById('music-btn');
+        const bgmPlayer = document.getElementById('bgm-player');
+        bgmPlayer.volume = 0.4;
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function toggleMusic() {
+            if (isMusicPlaying) {
+                bgmPlayer.pause();
+                musicBtn.classList.remove('active');
+                musicBtn.style.opacity = "0.5";
+            } else {
+                bgmPlayer.play().then(() => {
+                    musicBtn.classList.add('active');
+                    musicBtn.style.opacity = "1";
+                }).catch(error => { alert("請先與頁面互動後再點擊音樂按鈕！"); });
+            }
+            isMusicPlaying = !isMusicPlaying;
+        }
+
+        function toggleSound() {
+            isSoundOn = !isSoundOn;
+            soundBtn.textContent = isSoundOn ? "🔊" : "🔇";
+            soundBtn.classList.toggle("active");
+            if (isSoundOn) playClickSound();
+        }
+
+        function playTone(freq, type, duration, volume = 0.1) {
+            if (!isSoundOn) return;
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(volume, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function playClickSound() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            if (!isSoundOn) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        function playAlarmSound() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            playTone(523.25, 'sine', 1.5, 0.2);
+            setTimeout(() => playTone(659.25, 'sine', 1.5, 0.2), 200);
+            setTimeout(() => playTone(783.99, 'sine', 2.0, 0.2), 400);
+        }
+
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+            return `${m}:${s < 10 ? '0' : ''}${s}`;
+        }
+
+        function updateDisplay() {
+            timerDisplay.textContent = formatTime(timeLeft);
+            document.title = `${formatTime(timeLeft)} - 溫馨番茄鐘`;
+        }
+
+        function startTimer() {
+            if (isRunning) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            playClickSound();
+            isRunning = true;
+            iconArea.style.transform = "scale(1.1)";
+            timerId = setInterval(() => {
+                if (timeLeft > 0) {
+                    timeLeft--;
+                    updateDisplay();
+                } else {
+                    clearInterval(timerId);
+                    isRunning = false;
+                    playAlarmSound();
+                    iconArea.style.transform = "scale(1)";
+                }
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            playClickSound();
+            clearInterval(timerId);
+            isRunning = false;
+            iconArea.style.transform = "scale(1)";
+        }
+
+        function resetTimer() {
+            playClickSound();
+            pauseTimer();
+            timeLeft = parseInt(customTimeInput.value) * 60;
+            updateDisplay();
+        }
+
+        function updateCustomTime() {
+            if (!isRunning) {
+                let minutes = parseInt(customTimeInput.value);
+                if (minutes < 1) minutes = 1;
+                timeLeft = minutes * 60;
+                updateDisplay();
+            }
+        }
+        updateDisplay();
+    </script>
+</body>
+
+</html>
