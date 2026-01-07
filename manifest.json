@@ -1,6 +1,6 @@
 {
     "name": "Cozy Pomodoro",
-    "short_name": "CozyTimer",
+    "short_name": "番茄鐘",
     "start_url": "./index.html",
     "display": "standalone",
     "background_color": "#FFF9E6",
@@ -13,4 +13,5 @@
             "type": "image/png"
         }
     ]
+
 }
