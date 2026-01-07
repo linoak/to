@@ -1,6 +1,6 @@
 // 更新版本號，確保瀏覽器知道有新東西
 // 將版本號從 v2 改為 v3
-const CACHE_NAME = 'cozy-pomodoro-v3';
+const CACHE_NAME = 'cozy-pomodoro-v4';
 
 // 加入 mp3 檔案到列表
 const ASSETS_TO_CACHE = [
